@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orchestra Model v2 — Mai's Company</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --bg:#0a0e17;
+  --bg-card:#111827;
+  --bg-card-hover:#1a2332;
+  --border:#1e293b;
+  --text:#e2e8f0;
+  --text-dim:#64748b;
+  --text-bright:#f8fafc;
+  --cyan:#06b6d4;
+  --cyan-glow:0 0 20px rgba(6,182,212,0.3);
+  --blue:#3b82f6;
+  --blue-glow:0 0 20px rgba(59,130,246,0.3);
+  --purple:#a855f7;
+  --purple-glow:0 0 20px rgba(168,85,247,0.3);
+  --orange:#f97316;
+  --orange-glow:0 0 20px rgba(249,115,22,0.3);
+  --green:#22c55e;
+  --green-glow:0 0 20px rgba(34,197,94,0.3);
+  --red:#ef4444;
+  --pink:#ec4899;
+  --yellow:#eab308;
+  --yellow-glow:0 0 20px rgba(234,179,8,0.3);
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Fira Sans',sans-serif;
+  overflow-x:hidden;
+  min-height:100vh;
+}
+
+body::before{
+  content:'';position:fixed;top:0;left:0;right:0;bottom:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
+  pointer-events:none;z-index:9999;
+}
+
+.container{max-width:1400px;margin:0 auto;padding:2rem 1.5rem}
+
+.header{text-align:center;margin-bottom:3rem;position:relative}
+.header h1{
+  font-family:'Fira Code',monospace;font-size:2.5rem;font-weight:700;
+  background:linear-gradient(135deg,var(--cyan),var(--blue),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:0.5rem;
+}
+.header .subtitle{color:var(--text-dim);font-size:1.1rem;letter-spacing:0.05em}
+.header .version{
+  font-family:'Fira Code',monospace;font-size:0.75rem;color:var(--green);
+  margin-top:0.3rem;
+}
+.header .pulse{
+  position:absolute;top:50%;right:2rem;width:12px;height:12px;
+  background:var(--green);border-radius:50%;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4)}50%{box-shadow:0 0 0 12px rgba(34,197,94,0)}}
+
+.section-title{
+  font-family:'Fira Code',monospace;font-size:1.2rem;color:var(--cyan);
+  margin-bottom:1.5rem;display:flex;align-items:center;gap:0.75rem;
+}
+.section-title::before{content:'>';color:var(--text-dim)}
+.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+
+/* Nodes */
+.node{
+  position:relative;border:1px solid var(--border);border-radius:12px;
+  padding:1.25rem 2rem;text-align:center;
+  transition:all 0.3s ease;cursor:default;
+}
+.node:hover{transform:translateY(-2px)}
+
+.node-tyler{
+  background:linear-gradient(135deg,rgba(249,115,22,0.1),rgba(249,115,22,0.05));
+  border-color:rgba(249,115,22,0.3);max-width:320px;width:100%;
+}
+.node-tyler:hover{box-shadow:var(--orange-glow)}
+
+.node-mai{
+  background:linear-gradient(135deg,rgba(6,182,212,0.1),rgba(59,130,246,0.05));
+  border-color:rgba(6,182,212,0.3);max-width:700px;width:100%;
+}
+.node-mai:hover{box-shadow:var(--cyan-glow)}
+
+.node-worker{
+  background:linear-gradient(135deg,rgba(168,85,247,0.08),rgba(168,85,247,0.03));
+  border-color:rgba(168,85,247,0.25);flex:1;min-width:180px;
+}
+.node-worker:hover{box-shadow:var(--purple-glow)}
+
+.node-label{font-family:'Fira Code',monospace;font-size:0.95rem;font-weight:600;margin-bottom:0.35rem}
+.node-role{font-size:0.8rem;color:var(--text-dim)}
+.node-model{
+  display:inline-block;font-family:'Fira Code',monospace;font-size:0.65rem;
+  padding:2px 8px;border-radius:4px;margin-top:0.4rem;
+  background:rgba(255,255,255,0.05);color:var(--text-dim);
+}
+
+.mai-internals{display:flex;gap:0.75rem;margin-top:1rem;justify-content:center;flex-wrap:wrap}
+.mai-chip{
+  font-family:'Fira Code',monospace;font-size:0.7rem;
+  padding:4px 12px;border-radius:6px;
+  border:1px solid rgba(6,182,212,0.2);
+  background:rgba(6,182,212,0.05);color:var(--cyan);
+}
+
+/* Connectors */
+.connector{display:flex;justify-content:center;align-items:center;height:48px;position:relative}
+.connector-line{width:2px;height:100%;position:relative}
+.connector-line.cyan-purple{background:linear-gradient(180deg,var(--cyan),var(--purple))}
+.connector-line.orange-cyan{background:linear-gradient(180deg,var(--orange),var(--cyan))}
+.connector-line::after{
+  content:'';position:absolute;bottom:-4px;left:-3px;
+  width:8px;height:8px;border-radius:50%;
+}
+.connector-line.cyan-purple::after{background:var(--purple);box-shadow:var(--purple-glow)}
+.connector-line.orange-cyan::after{background:var(--cyan);box-shadow:var(--cyan-glow)}
+
+.data-particle{
+  position:absolute;width:4px;height:4px;border-radius:50%;
+  background:var(--cyan);box-shadow:0 0 6px var(--cyan);
+  animation:flowDown 2s ease-in-out infinite;
+}
+@keyframes flowDown{0%{top:0;opacity:0}20%{opacity:1}80%{opacity:1}100%{top:100%;opacity:0}}
+
+/* Dual bus layout */
+.dual-bus{
+  display:grid;grid-template-columns:1fr 1fr;gap:1rem;
+  max-width:700px;width:100%;
+}
+.bus-node{
+  border:1px solid var(--border);border-radius:12px;
+  padding:1rem 1.25rem;text-align:center;transition:all 0.3s ease;
+}
+.bus-node:hover{transform:translateY(-2px)}
+.bus-fs{
+  background:linear-gradient(135deg,rgba(34,197,94,0.08),rgba(34,197,94,0.03));
+  border-color:rgba(34,197,94,0.25);
+}
+.bus-fs:hover{box-shadow:var(--green-glow)}
+.bus-brain{
+  background:linear-gradient(135deg,rgba(234,179,8,0.08),rgba(234,179,8,0.03));
+  border-color:rgba(234,179,8,0.25);
+}
+.bus-brain:hover{box-shadow:var(--yellow-glow)}
+.bus-label{font-family:'Fira Code',monospace;font-size:0.85rem;font-weight:600;margin-bottom:0.3rem}
+.bus-sub{font-size:0.7rem;color:var(--text-dim);margin-bottom:0.5rem}
+
+.arch-graph{display:flex;flex-direction:column;align-items:center;gap:0;margin-bottom:4rem}
+.workers-row{display:flex;gap:1rem;width:100%;max-width:700px;justify-content:center}
+
+/* Connector split */
+.connector-split{
+  display:flex;justify-content:center;gap:6rem;height:48px;
+  max-width:700px;width:100%;
+}
+.connector-split .connector{flex:1;display:flex;justify-content:center}
+
+/* Tags */
+.flow-tag{
+  display:inline-block;font-family:'Fira Code',monospace;font-size:0.65rem;
+  padding:2px 8px;border-radius:4px;margin-right:0.4rem;margin-top:0.3rem;
+}
+.tag-file{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2)}
+.tag-tmux{background:rgba(168,85,247,0.1);color:var(--purple);border:1px solid rgba(168,85,247,0.2)}
+.tag-memory{background:rgba(6,182,212,0.1);color:var(--cyan);border:1px solid rgba(6,182,212,0.2)}
+.tag-gate{background:rgba(249,115,22,0.1);color:var(--orange);border:1px solid rgba(249,115,22,0.2)}
+.tag-brain{background:rgba(234,179,8,0.1);color:var(--yellow);border:1px solid rgba(234,179,8,0.2)}
+
+/* Flow */
+.flow-section{margin-bottom:4rem}
+.flow-steps{display:flex;flex-direction:column;gap:0}
+.flow-step{
+  display:flex;align-items:flex-start;gap:1.5rem;
+  padding:1.25rem 1.5rem;border-left:2px solid var(--border);
+  position:relative;transition:all 0.3s ease;
+}
+.flow-step:hover{background:rgba(255,255,255,0.02)}
+.flow-step.active{border-left-color:var(--cyan)}
+.flow-step::before{
+  content:'';position:absolute;left:-6px;top:1.5rem;
+  width:10px;height:10px;border-radius:50%;
+  background:var(--bg-card);border:2px solid var(--border);
+  transition:all 0.3s ease;
+}
+.flow-step.active::before{background:var(--cyan);border-color:var(--cyan);box-shadow:var(--cyan-glow)}
+.flow-step-num{
+  font-family:'Fira Code',monospace;font-size:0.75rem;
+  color:var(--text-dim);min-width:24px;padding-top:2px;
+}
+.flow-step-content h4{font-family:'Fira Code',monospace;font-size:0.9rem;color:var(--text-bright);margin-bottom:0.35rem}
+.flow-step-content p{font-size:0.85rem;color:var(--text-dim);line-height:1.6}
+
+/* Memory layers */
+.memory-layers{display:flex;flex-direction:column;gap:0;margin-bottom:4rem;max-width:800px;margin-left:auto;margin-right:auto}
+.memory-layer{
+  border:1px solid var(--border);padding:1.25rem 1.5rem;
+  transition:all 0.3s ease;position:relative;
+}
+.memory-layer:first-child{border-radius:12px 12px 0 0}
+.memory-layer:last-child{border-radius:0 0 12px 12px}
+.memory-layer:hover{background:rgba(255,255,255,0.02)}
+.memory-layer-title{font-family:'Fira Code',monospace;font-size:0.9rem;font-weight:600;margin-bottom:0.4rem}
+.memory-layer-desc{font-size:0.8rem;color:var(--text-dim);line-height:1.6}
+.memory-layer-badge{
+  position:absolute;top:1rem;right:1rem;
+  font-family:'Fira Code',monospace;font-size:0.6rem;
+  padding:2px 8px;border-radius:4px;
+}
+.layer-shared{
+  background:linear-gradient(135deg,rgba(234,179,8,0.06),rgba(234,179,8,0.02));
+  border-color:rgba(234,179,8,0.2);
+}
+.layer-fs{
+  background:linear-gradient(135deg,rgba(34,197,94,0.06),rgba(34,197,94,0.02));
+  border-color:rgba(34,197,94,0.2);
+}
+.layer-static{
+  background:linear-gradient(135deg,rgba(168,85,247,0.06),rgba(168,85,247,0.02));
+  border-color:rgba(168,85,247,0.2);
+}
+
+/* Agent Registry */
+.registry-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:4rem}
+.registry-group{
+  background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
+  padding:1.25rem;transition:all 0.3s ease;
+}
+.registry-group:hover{background:var(--bg-card-hover)}
+.registry-group-title{
+  font-family:'Fira Code',monospace;font-size:0.8rem;
+  margin-bottom:0.75rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);
+}
+.registry-agent{
+  font-family:'Fira Code',monospace;font-size:0.7rem;
+  padding:3px 0;color:var(--text-dim);display:flex;align-items:center;gap:0.4rem;
+}
+.registry-agent::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* Presets */
+.presets-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:4rem}
+.preset-card{
+  background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
+  padding:1.25rem;cursor:pointer;transition:all 0.3s ease;
+}
+.preset-card:hover{background:var(--bg-card-hover);transform:translateY(-2px)}
+.preset-card.selected{border-color:var(--cyan);box-shadow:var(--cyan-glow)}
+.preset-cmd{font-family:'Fira Code',monospace;font-size:0.85rem;color:var(--cyan);margin-bottom:0.75rem}
+.preset-cmd::before{content:'$ ';color:var(--text-dim)}
+.preset-agents{display:flex;flex-wrap:wrap;gap:0.4rem}
+.preset-agent{font-family:'Fira Code',monospace;font-size:0.7rem;padding:3px 10px;border-radius:6px}
+.agent-opus{background:rgba(6,182,212,0.1);color:var(--cyan);border:1px solid rgba(6,182,212,0.2)}
+.agent-sonnet{background:rgba(168,85,247,0.1);color:var(--purple);border:1px solid rgba(168,85,247,0.2)}
+.agent-review{background:rgba(249,115,22,0.1);color:var(--orange);border:1px solid rgba(249,115,22,0.2)}
+
+/* Tmux */
+.tmux-layout{
+  display:grid;grid-template-columns:3fr 2fr;gap:2px;
+  background:var(--border);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;margin-bottom:4rem;max-width:900px;margin-left:auto;margin-right:auto;
+}
+.tmux-left{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px}
+.tmux-pane{background:var(--bg-card);padding:1.25rem;position:relative;min-height:140px;transition:all 0.3s ease}
+.tmux-pane:hover{background:var(--bg-card-hover)}
+.tmux-pane-id{position:absolute;top:8px;right:10px;font-family:'Fira Code',monospace;font-size:0.6rem;color:var(--text-dim);opacity:0.5}
+.tmux-pane-title{font-family:'Fira Code',monospace;font-size:0.85rem;font-weight:600;margin-bottom:0.4rem}
+.tmux-pane-desc{font-size:0.75rem;color:var(--text-dim);line-height:1.5}
+.tmux-preview{
+  background:linear-gradient(135deg,rgba(236,72,153,0.05),var(--bg-card));
+  grid-row:1/3;display:flex;flex-direction:column;justify-content:center;
+  align-items:center;text-align:center;
+}
+.tmux-preview .tmux-pane-title{color:var(--pink)}
+
+/* Stats */
+.stats-bar{
+  display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;
+  padding:1.5rem;background:var(--bg-card);border:1px solid var(--border);
+  border-radius:12px;margin-bottom:4rem;
+}
+.stat{text-align:center}
+.stat-value{font-family:'Fira Code',monospace;font-size:1.5rem;font-weight:700}
+.stat-label{font-size:0.75rem;color:var(--text-dim);margin-top:0.2rem}
+.stat-cyan .stat-value{color:var(--cyan)}
+.stat-purple .stat-value{color:var(--purple)}
+.stat-green .stat-value{color:var(--green)}
+.stat-orange .stat-value{color:var(--orange)}
+.stat-yellow .stat-value{color:var(--yellow)}
+
+.footer{text-align:center;padding:2rem;color:var(--text-dim);font-size:0.8rem;border-top:1px solid var(--border)}
+.footer span{color:var(--cyan)}
+
+@media(max-width:768px){
+  .header h1{font-size:1.8rem}
+  .workers-row,.dual-bus{flex-direction:column;align-items:center}
+  .dual-bus{grid-template-columns:1fr}
+  .tmux-layout{grid-template-columns:1fr}
+  .tmux-left{grid-template-columns:1fr}
+  .stats-bar{gap:1rem}
+  .connector-split{gap:2rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .data-particle,.pulse{animation:none}
+  .node:hover,.preset-card:hover,.tmux-pane:hover,.flow-step:hover,.bus-node:hover,.memory-layer:hover,.registry-group:hover{transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header class="header">
+    <h1>Orchestra Model</h1>
+    <p class="subtitle">Mai's Multi-Agent Company Architecture</p>
+    <div class="version">v2.1 — NMEM_BRAIN Direct SQLite (no server needed)</div>
+    <div class="pulse" title="System active"></div>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat stat-cyan"><div class="stat-value">13</div><div class="stat-label">Agents Available</div></div>
+    <div class="stat stat-purple"><div class="stat-value">3</div><div class="stat-label">Parallel Workers</div></div>
+    <div class="stat stat-green"><div class="stat-value">4M</div><div class="stat-label">Total Context</div></div>
+    <div class="stat stat-yellow"><div class="stat-value">1</div><div class="stat-label">Shared Brain</div></div>
+    <div class="stat stat-orange"><div class="stat-value">x20</div><div class="stat-label">Max Plan</div></div>
+  </div>
+
+  <!-- Architecture -->
+  <div class="section-title">architecture</div>
+  <div class="arch-graph">
+
+    <div class="node node-tyler">
+      <div class="node-label" style="color:var(--orange)">Tyler</div>
+      <div class="node-role">End User</div>
+    </div>
+
+    <div class="connector"><div class="connector-line orange-cyan"><div class="data-particle"></div></div></div>
+
+    <div class="node node-mai">
+      <div class="node-label" style="color:var(--cyan)">Mai</div>
+      <div class="node-role">CEO / Orchestrator</div>
+      <div class="node-model">Opus 4.6 [1M]</div>
+      <div class="mai-internals">
+        <span class="mai-chip">Dispatch Engine</span>
+        <span class="mai-chip">Agent Registry</span>
+        <span class="mai-chip">Quality Gates</span>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-line cyan-purple"><div class="data-particle" style="animation-delay:0.5s"></div></div></div>
+
+    <!-- Dual Communication Bus -->
+    <div class="dual-bus">
+      <div class="bus-node bus-fs">
+        <div class="bus-label" style="color:var(--green)">Filesystem Bus</div>
+        <div class="bus-sub">WHO does WHAT</div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.3rem;justify-content:center">
+          <span class="flow-tag tag-file">tasks/*.md</span>
+          <span class="flow-tag tag-file">results/*.md</span>
+          <span class="flow-tag tag-file">signals/*.done</span>
+        </div>
+      </div>
+      <div class="bus-node bus-brain">
+        <div class="bus-label" style="color:var(--yellow)">Shared Brain</div>
+        <div class="bus-sub">WHY + WHAT we KNOW</div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.3rem;justify-content:center">
+          <span class="flow-tag tag-brain">NMEM_BRAIN=bemai</span>
+          <span class="flow-tag tag-brain">direct SQLite</span>
+          <span class="flow-tag tag-brain">no server</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector-split">
+      <div class="connector"><div class="connector-line cyan-purple" style="background:linear-gradient(180deg,var(--green),var(--purple))"><div class="data-particle" style="animation-delay:1s;background:var(--green);box-shadow:0 0 6px var(--green)"></div></div></div>
+      <div class="connector"><div class="connector-line cyan-purple" style="background:linear-gradient(180deg,var(--yellow),var(--purple))"><div class="data-particle" style="animation-delay:1.3s;background:var(--yellow);box-shadow:0 0 6px var(--yellow)"></div></div></div>
+    </div>
+
+    <div class="workers-row">
+      <div class="node node-worker">
+        <div class="node-label" style="color:var(--purple)">Worker 1</div>
+        <div class="node-role">Rotatable Agent</div>
+        <div class="node-model">Sonnet 4.6</div>
+        <div style="margin-top:0.4rem">
+          <span class="flow-tag tag-file" style="font-size:0.6rem">tasks</span>
+          <span class="flow-tag tag-brain" style="font-size:0.6rem">brain</span>
+        </div>
+      </div>
+      <div class="node node-worker">
+        <div class="node-label" style="color:var(--purple)">Worker 2</div>
+        <div class="node-role">Rotatable Agent</div>
+        <div class="node-model">Sonnet 4.6</div>
+        <div style="margin-top:0.4rem">
+          <span class="flow-tag tag-file" style="font-size:0.6rem">tasks</span>
+          <span class="flow-tag tag-brain" style="font-size:0.6rem">brain</span>
+        </div>
+      </div>
+      <div class="node node-worker">
+        <div class="node-label" style="color:var(--purple)">Worker 3</div>
+        <div class="node-role">Rotatable Agent</div>
+        <div class="node-model">Sonnet 4.6</div>
+        <div style="margin-top:0.4rem">
+          <span class="flow-tag tag-file" style="font-size:0.6rem">tasks</span>
+          <span class="flow-tag tag-brain" style="font-size:0.6rem">brain</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Memory Layers -->
+  <div class="section-title">memory architecture</div>
+  <div class="memory-layers">
+    <div class="memory-layer layer-shared">
+      <div class="memory-layer-badge tag-brain">REAL-TIME</div>
+      <div class="memory-layer-title" style="color:var(--yellow)">Layer 1: Shared Brain (NMEM_BRAIN env var)</div>
+      <div class="memory-layer-desc">
+        T&#7845;t c&#7843; agents set NMEM_BRAIN=bemai &rarr; c&ugrave;ng 1 SQLite database, kh&ocirc;ng c&#7847;n server<br>
+        SQLite WAL mode handle concurrent writes &bull; Worker remember &rarr; Mai recall th&#7845;y ngay<br>
+        <span class="flow-tag tag-brain">NMEM_BRAIN=bemai</span>
+        <span class="flow-tag tag-brain">direct SQLite</span>
+        <span class="flow-tag tag-brain">WAL concurrent OK</span>
+      </div>
+    </div>
+    <div class="memory-layer layer-fs">
+      <div class="memory-layer-badge tag-file">PER-TASK</div>
+      <div class="memory-layer-title" style="color:var(--green)">Layer 2: Filesystem Bus (Dispatch Protocol)</div>
+      <div class="memory-layer-desc">
+        tasks/*.md &mdash; structured task input &bull; results/*.md &mdash; structured output<br>
+        signals/*.done &mdash; completion signals &bull; Scope enforcement per worker<br>
+        <span class="flow-tag tag-file">tasks/w1.md</span>
+        <span class="flow-tag tag-file">results/w1.md</span>
+        <span class="flow-tag tag-file">signals/w1.done</span>
+      </div>
+    </div>
+    <div class="memory-layer layer-static">
+      <div class="memory-layer-badge tag-tmux">STATIC</div>
+      <div class="memory-layer-title" style="color:var(--purple)">Layer 3: CLAUDE.md + Agent Personas</div>
+      <div class="memory-layer-desc">
+        WORKER-CLAUDE.md &mdash; worker protocol &bull; ~/.claude/agents/*.md &mdash; agent expertise<br>
+        Loaded at session start &bull; Defines identity + rules + scope behavior<br>
+        <span class="flow-tag tag-tmux">CLAUDE.md</span>
+        <span class="flow-tag tag-tmux">agents/*.md</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent Registry -->
+  <div class="section-title">agent registry</div>
+  <div class="registry-grid">
+    <div class="registry-group">
+      <div class="registry-group-title" style="color:var(--cyan)">Engineering</div>
+      <div class="registry-agent" style="--dot:var(--cyan)"><span style="background:var(--cyan)" class="registry-dot"></span>backend-architect</div>
+      <div class="registry-agent"><span style="background:var(--cyan)" class="registry-dot"></span>software-architect</div>
+      <div class="registry-agent"><span style="background:var(--cyan)" class="registry-dot"></span>python-pro</div>
+      <div class="registry-agent"><span style="background:var(--cyan)" class="registry-dot"></span>rapid-prototyper</div>
+      <div class="registry-agent"><span style="background:var(--cyan)" class="registry-dot"></span>devops-automator</div>
+      <div class="registry-agent"><span style="background:var(--cyan)" class="registry-dot"></span>mcp-developer</div>
+      <style>.registry-agent span{display:inline-block;width:6px;height:6px;border-radius:50%}</style>
+    </div>
+    <div class="registry-group">
+      <div class="registry-group-title" style="color:var(--yellow)">Database</div>
+      <div class="registry-agent"><span style="background:var(--yellow)"></span>database-optimizer</div>
+      <div class="registry-agent"><span style="background:var(--yellow)"></span>postgres-pro</div>
+    </div>
+    <div class="registry-group">
+      <div class="registry-group-title" style="color:var(--orange)">Quality & Security</div>
+      <div class="registry-agent"><span style="background:var(--orange)"></span>code-reviewer</div>
+      <div class="registry-agent"><span style="background:var(--orange)"></span>security-engineer</div>
+      <div class="registry-agent"><span style="background:var(--orange)"></span>reality-checker</div>
+      <div class="registry-agent"><span style="background:var(--orange)"></span>performance-benchmarker</div>
+    </div>
+    <div class="registry-group">
+      <div class="registry-group-title" style="color:var(--purple)">Orchestration</div>
+      <div class="registry-agent"><span style="background:var(--purple)"></span>agents-orchestrator</div>
+    </div>
+    <div class="registry-group" style="border-style:dashed;opacity:0.6">
+      <div class="registry-group-title" style="color:var(--text-dim)">Expandable Pool</div>
+      <div class="registry-agent"><span style="background:var(--text-dim)"></span>content-creator</div>
+      <div class="registry-agent"><span style="background:var(--text-dim)"></span>seo-specialist</div>
+      <div class="registry-agent"><span style="background:var(--text-dim)"></span>data-analyst</div>
+      <div class="registry-agent"><span style="background:var(--text-dim)"></span>project-manager</div>
+      <div class="registry-agent"><span style="background:var(--text-dim)"></span>mobile-developer</div>
+      <div class="registry-agent"><span style="background:var(--text-dim)"></span>ai-engineer</div>
+      <div class="registry-agent"><span style="background:var(--text-dim)"></span>+ custom agents</div>
+      <div style="font-size:0.6rem;color:var(--text-dim);margin-top:0.5rem;font-style:italic">200+ agents available<br>drop .md into ~/.claude/agents/</div>
+    </div>
+  </div>
+
+  <!-- Agent Sources -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:4rem">
+    <div class="bus-node" style="background:linear-gradient(135deg,rgba(6,182,212,0.06),rgba(6,182,212,0.02));border-color:rgba(6,182,212,0.2);text-align:left">
+      <div class="bus-label" style="color:var(--cyan);font-size:0.8rem">agency-agents</div>
+      <div style="font-size:0.7rem;color:var(--text-dim);line-height:1.6">
+        msitarzewski/agency-agents<br>
+        47k stars &bull; 100+ agents &bull; MIT<br>
+        Content s&acirc;u, code examples, deliverable templates<br>
+        <span class="flow-tag tag-memory" style="font-size:0.55rem;margin-top:0.3rem">primary source</span>
+      </div>
+    </div>
+    <div class="bus-node" style="background:linear-gradient(135deg,rgba(168,85,247,0.06),rgba(168,85,247,0.02));border-color:rgba(168,85,247,0.2);text-align:left">
+      <div class="bus-label" style="color:var(--purple);font-size:0.8rem">VoltAgent</div>
+      <div style="font-size:0.7rem;color:var(--text-dim);line-height:1.6">
+        VoltAgent/awesome-claude-code-subagents<br>
+        14k stars &bull; 127+ agents &bull; MIT<br>
+        Tools/model spec, language specialists, plugin install<br>
+        <span class="flow-tag tag-tmux" style="font-size:0.55rem;margin-top:0.3rem">supplement source</span>
+      </div>
+    </div>
+    <div class="bus-node" style="background:linear-gradient(135deg,rgba(249,115,22,0.06),rgba(249,115,22,0.02));border-color:rgba(249,115,22,0.2);text-align:left">
+      <div class="bus-label" style="color:var(--orange);font-size:0.8rem">Custom</div>
+      <div style="font-size:0.7rem;color:var(--text-dim);line-height:1.6">
+        T&#7921; t&#7841;o agent .md cho domain ri&ecirc;ng<br>
+        Persona + rules + scope + deliverables<br>
+        Drop v&agrave;o ~/.claude/agents/ l&agrave; xong<br>
+        <span class="flow-tag tag-gate" style="font-size:0.55rem;margin-top:0.3rem">unlimited</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dispatch Flow -->
+  <div class="section-title">dispatch flow</div>
+  <div class="flow-section">
+    <div class="flow-steps">
+      <div class="flow-step active">
+        <div class="flow-step-num">01</div>
+        <div class="flow-step-content">
+          <h4>Tyler &rarr; Mai</h4>
+          <p>Anh ra l&#7879;nh, em ph&acirc;n t&iacute;ch task</p>
+        </div>
+      </div>
+      <div class="flow-step active">
+        <div class="flow-step-num">02</div>
+        <div class="flow-step-content">
+          <h4>Recall Brain &amp; Plan</h4>
+          <p>nmem_recall quy&#7871;t &#273;&#7883;nh c&#361; &bull; Ch&#7885;n team t&#7915; Agent Registry &bull; X&aacute;c &#273;&#7883;nh scopes</p>
+          <span class="flow-tag tag-brain">nmem_recall</span>
+          <span class="flow-tag tag-memory">Agent Registry</span>
+        </div>
+      </div>
+      <div class="flow-step active">
+        <div class="flow-step-num">03</div>
+        <div class="flow-step-content">
+          <h4>Dispatch Workers</h4>
+          <p>Ghi task files (agent persona + scope + constraints) &bull; tmux send-keys v&agrave;o worker panes</p>
+          <span class="flow-tag tag-file">tasks/w1.md</span>
+          <span class="flow-tag tag-file">tasks/w2.md</span>
+          <span class="flow-tag tag-tmux">tmux send-keys</span>
+        </div>
+      </div>
+      <div class="flow-step active">
+        <div class="flow-step-num">04</div>
+        <div class="flow-step-content">
+          <h4>Parallel Execution</h4>
+          <p>Workers ch&#7841;y &#273;&#7891;ng th&#7901;i &bull; M&#7895;i worker: &#273;&#7885;c task &rarr; nmem_recall brain &rarr; l&agrave;m &rarr; nmem_remember &rarr; signal</p>
+          <span class="flow-tag tag-tmux">%2 running</span>
+          <span class="flow-tag tag-tmux">%3 running</span>
+          <span class="flow-tag tag-brain">brain read/write</span>
+        </div>
+      </div>
+      <div class="flow-step active">
+        <div class="flow-step-num">05</div>
+        <div class="flow-step-content">
+          <h4>Signal &amp; Collect</h4>
+          <p>Workers touch .done &bull; Mai poll signals &bull; &#272;&#7885;c results + recall workers' new memories</p>
+          <span class="flow-tag tag-file">signals/*.done</span>
+          <span class="flow-tag tag-brain">nmem_recall new</span>
+        </div>
+      </div>
+      <div class="flow-step active">
+        <div class="flow-step-num">06</div>
+        <div class="flow-step-content">
+          <h4>Quality Gate</h4>
+          <p>Dispatch @code-reviewer &bull; PASS &rarr; merge &bull; FAIL &rarr; loop (max 3 retries)</p>
+          <span class="flow-tag tag-gate">quality-gate</span>
+          <span class="flow-tag tag-gate">max 3 retries</span>
+        </div>
+      </div>
+      <div class="flow-step active">
+        <div class="flow-step-num">07</div>
+        <div class="flow-step-content">
+          <h4>Report</h4>
+          <p>nmem_remember k&#7871;t qu&#7843; &bull; Update TASKS.md &bull; Preview panel &bull; "Done anh"</p>
+          <span class="flow-tag tag-brain">nmem_remember</span>
+          <span class="flow-tag tag-file">TASKS.md</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Team Presets -->
+  <div class="section-title">dynamic teams</div>
+  <div class="presets-grid">
+    <div class="preset-card selected" onclick="selectPreset(this)">
+      <div class="preset-cmd">tmux-work dev</div>
+      <div class="preset-agents">
+        <span class="preset-agent agent-opus">Mai (Opus)</span>
+        <span class="preset-agent agent-sonnet">backend-architect</span>
+        <span class="preset-agent agent-sonnet">python-pro</span>
+        <span class="preset-agent agent-review">code-reviewer</span>
+      </div>
+    </div>
+    <div class="preset-card" onclick="selectPreset(this)">
+      <div class="preset-cmd">tmux-work db</div>
+      <div class="preset-agents">
+        <span class="preset-agent agent-opus">Mai (Opus)</span>
+        <span class="preset-agent agent-sonnet">postgres-pro</span>
+        <span class="preset-agent agent-sonnet">backend-architect</span>
+        <span class="preset-agent agent-review">code-reviewer</span>
+      </div>
+    </div>
+    <div class="preset-card" onclick="selectPreset(this)">
+      <div class="preset-cmd">tmux-work security</div>
+      <div class="preset-agents">
+        <span class="preset-agent agent-opus">Mai (Opus)</span>
+        <span class="preset-agent agent-sonnet">security-engineer</span>
+        <span class="preset-agent agent-review">code-reviewer</span>
+      </div>
+    </div>
+    <div class="preset-card" onclick="selectPreset(this)">
+      <div class="preset-cmd">tmux-work research</div>
+      <div class="preset-agents">
+        <span class="preset-agent agent-opus">Mai (Opus)</span>
+        <span class="preset-agent agent-sonnet">researcher-1</span>
+        <span class="preset-agent agent-sonnet">researcher-2</span>
+        <span class="preset-agent agent-sonnet">researcher-3</span>
+      </div>
+    </div>
+    <div class="preset-card" onclick="selectPreset(this)">
+      <div class="preset-cmd">tmux-work full</div>
+      <div class="preset-agents">
+        <span class="preset-agent agent-opus">Mai (Opus)</span>
+        <span class="preset-agent agent-sonnet">rotate per phase</span>
+        <span class="preset-agent agent-sonnet">rotate</span>
+        <span class="preset-agent agent-review">code-reviewer</span>
+      </div>
+    </div>
+    <div class="preset-card" onclick="selectPreset(this)">
+      <div class="preset-cmd">tmux-work mcp</div>
+      <div class="preset-agents">
+        <span class="preset-agent agent-opus">Mai (Opus)</span>
+        <span class="preset-agent agent-sonnet">mcp-developer</span>
+        <span class="preset-agent agent-sonnet">python-pro</span>
+        <span class="preset-agent agent-review">code-reviewer</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tmux Layout -->
+  <div class="section-title">tmux layout</div>
+  <div class="tmux-layout">
+    <div class="tmux-left">
+      <div class="tmux-pane" style="border-right:1px solid var(--border);border-bottom:1px solid var(--border)">
+        <div class="tmux-pane-id">%0</div>
+        <div class="tmux-pane-title" style="color:var(--cyan)">Mai (Opus)</div>
+        <div class="tmux-pane-desc">CEO / Orchestrator<br>Talks to Tyler<br>Dispatch + Quality gates<br>Shared Brain access</div>
+      </div>
+      <div class="tmux-pane" style="border-bottom:1px solid var(--border)">
+        <div class="tmux-pane-id">%2</div>
+        <div class="tmux-pane-title" style="color:var(--purple)">Worker 1</div>
+        <div class="tmux-pane-desc">Rotatable agent<br>tasks + brain access<br>Isolated context 1M</div>
+      </div>
+      <div class="tmux-pane" style="border-right:1px solid var(--border)">
+        <div class="tmux-pane-id">%3</div>
+        <div class="tmux-pane-title" style="color:var(--purple)">Worker 2</div>
+        <div class="tmux-pane-desc">Rotatable agent<br>tasks + brain access<br>Isolated context 1M</div>
+      </div>
+      <div class="tmux-pane">
+        <div class="tmux-pane-id">%4</div>
+        <div class="tmux-pane-title" style="color:var(--purple)">Worker 3</div>
+        <div class="tmux-pane-desc">Rotatable agent<br>tasks + brain access<br>Isolated context 1M</div>
+      </div>
+    </div>
+    <div class="tmux-pane tmux-preview">
+      <div class="tmux-pane-id">%1</div>
+      <div class="tmux-pane-title" style="color:var(--pink)">Preview Panel</div>
+      <div class="tmux-pane-desc">
+        Shared output view<br><br>
+        Any agent can push:<br>
+        <code style="font-family:'Fira Code',monospace;font-size:0.7rem;color:var(--pink)">tmux send-keys -t %1<br>'preview file.md'</code>
+        <br><br>
+        .md .pdf .docx .xlsx
+      </div>
+    </div>
+  </div>
+
+  <!-- Setup -->
+  <div class="section-title">setup requirements</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;margin-bottom:4rem">
+    <div class="bus-node bus-brain">
+      <div class="bus-label" style="color:var(--yellow)">1. Shared Brain</div>
+      <div style="font-size:0.75rem;color:var(--text-dim)">.mcp.json: env NMEM_BRAIN=bemai<br>Direct SQLite, no server needed</div>
+    </div>
+    <div class="bus-node bus-fs">
+      <div class="bus-label" style="color:var(--green)">2. Orchestra Directory</div>
+      <div style="font-size:0.75rem;color:var(--text-dim)">~/.claude/orchestra/<br>tasks/ results/ signals/</div>
+    </div>
+    <div class="bus-node" style="background:linear-gradient(135deg,rgba(168,85,247,0.08),rgba(168,85,247,0.03));border-color:rgba(168,85,247,0.25)">
+      <div class="bus-label" style="color:var(--purple)">3. Worker Config</div>
+      <div style="font-size:0.75rem;color:var(--text-dim)">WORKER-CLAUDE.md protocol<br>neural-memory plugin per worker</div>
+    </div>
+    <div class="bus-node" style="background:linear-gradient(135deg,rgba(6,182,212,0.08),rgba(6,182,212,0.03));border-color:rgba(6,182,212,0.25)">
+      <div class="bus-label" style="color:var(--cyan)">4. tmux-work Script</div>
+      <div style="font-size:0.75rem;color:var(--text-dim)">Dynamic team launch<br>Layout + Claude Code sessions</div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <span>Orchestra Model v2.1</span> &mdash; NMEM_BRAIN Direct SQLite &mdash; Built for <span>Tyler</span>
+  </footer>
+
+</div>
+
+<script>
+function selectPreset(el){
+  document.querySelectorAll('.preset-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.style.opacity='1'});
+},{threshold:0.3});
+document.querySelectorAll('.flow-step').forEach(s=>{
+  s.style.opacity='0.4';s.style.transition='opacity 0.5s ease';observer.observe(s);
+});
+</script>
+
+</body>
+</html>

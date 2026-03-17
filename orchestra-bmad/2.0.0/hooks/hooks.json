@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "SessionStart": [{
+      "hooks": [{
+        "type": "command",
+        "command": "test -f _bmad-output/.orchestra-state.yaml && echo '{\"hookSpecificOutput\":{\"additionalContext\":\"Orchestra-BMAD project in progress. Read _bmad-output/.orchestra-state.yaml and offer to resume.\"}}' || true",
+        "timeout": 5
+      }]
+    }]
+  }
+}

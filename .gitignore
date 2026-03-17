@@ -1,0 +1,10 @@
+CLAUDE.md
+.mcp.json
+bemiagent-*
+brain-map.md
+brain-training/
+.claude/
+docs/
+skills/
+test-*/
+*.html

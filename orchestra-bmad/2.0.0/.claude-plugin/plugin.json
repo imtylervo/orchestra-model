@@ -1,0 +1,8 @@
+{
+  "name": "orchestra-bmad",
+  "version": "2.0.0",
+  "description": "Orchestra-BMAD: structured agile workflow with parallel agent execution. 23 BMAD workflows, 9 agents, ~95% BMAD Method v6.2.0 coverage.",
+  "author": {
+    "name": "Tyler Vo"
+  }
+}
